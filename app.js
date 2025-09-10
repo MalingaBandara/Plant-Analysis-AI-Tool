@@ -32,13 +32,58 @@ app.use(express.static('public'));
 
 //* Routes
 
-// * Analyze Route
-//   - Handles POST requests to '/analyze'
-//   - For now, it simply responds with { success: true }
-//   - Later, you can extend this to analyze uploaded data or text using genAI
-app.post('/analyze', async (req, res) => {
-    res.json({ success: true }); // * Send success response back to client
+//! Analyze Route
+app.post('/analyze', upload.single('plant-img'), async (req, res) => {
+
+  try {
+
+    // * Step 1: Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload a file' });
+    }
+
+    // * Step 2: Read the uploaded file from disk and convert to base64
+    const imagePath = req.file.path;
+    const imageData = await fsPromises.readFile(imagePath, { encoding: 'base64' });
+
+    // * Step 3: Use GoogleGenAI SDK client to analyze the image
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.5-flash", // Specify the Gemini model to use
+      contents: [
+        // * Instruction text for the AI model
+        `Analyze this plant image and provide detailed analysis of its species, 
+        health, and care recommendations, its characteristics, care instructions, 
+        and any interesting facts. Please provide the response in plain text without using any markdown formatting.`,
+        {
+          // * Inline data for the AI model (the uploaded image)
+          inlineData: {
+            mimeType: req.file.mimetype, // Tell the SDK the type of the uploaded file
+            data: imageData,             // Base64-encoded image content
+          },
+        },
+      ],
+    });
+
+    // * Step 4: Extract the AI response text from the response object
+    const plantInfo = response.candidates[0].content.parts[0].text;
+
+    // * Step 5: Delete the uploaded file from the server to free up space
+    await fsPromises.unlink(imagePath);
+
+    // * Step 6: Send JSON response back to client with plant info and base64 image
+    res.json({
+      result: plantInfo,
+      image: `data:${req.file.mimetype};base64,${imageData}`,
+    });
+
+  } catch (error) {
+    // * Error handling: log the error and send 500 response to client
+    console.error("Error analyzing image:", error);
+    res.status(500).json({ error: "An error occurred while analyzing the image" });
+  }
+
 });
+
 
 
 // * Download PDF Route
