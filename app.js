@@ -36,15 +36,16 @@ app.use(express.static('public'));
 app.post('/analyze', upload.single('plant-img'), async (req, res) => {
 
   try {
-
     // * Step 1: Check if a file was uploaded
     if (!req.file) {
-      return res.status(400).json({ error: 'Please upload a file' });
+      return res.status(400).json({ error: "Please upload a file" });
     }
 
     // * Step 2: Read the uploaded file from disk and convert to base64
     const imagePath = req.file.path;
-    const imageData = await fsPromises.readFile(imagePath, { encoding: 'base64' });
+    const imageData = await fsPromises.readFile(imagePath, {
+      encoding: "base64",
+    });
 
     // * Step 3: Use GoogleGenAI SDK client to analyze the image
     const response = await genAI.models.generateContent({
@@ -58,7 +59,7 @@ app.post('/analyze', upload.single('plant-img'), async (req, res) => {
           // * Inline data for the AI model (the uploaded image)
           inlineData: {
             mimeType: req.file.mimetype, // Tell the SDK the type of the uploaded file
-            data: imageData,             // Base64-encoded image content
+            data: imageData, // Base64-encoded image content
           },
         },
       ],
@@ -67,7 +68,7 @@ app.post('/analyze', upload.single('plant-img'), async (req, res) => {
     // * Step 4: Extract the AI response text from the response object
     const plantInfo = response.candidates[0].content.parts[0].text;
 
-    // * Step 5: Delete the uploaded file from the server to free up space
+    // * Step 5: Delete the uploaded file from the server to free up space1
     await fsPromises.unlink(imagePath);
 
     // * Step 6: Send JSON response back to client with plant info and base64 image
@@ -75,7 +76,6 @@ app.post('/analyze', upload.single('plant-img'), async (req, res) => {
       result: plantInfo,
       image: `data:${req.file.mimetype};base64,${imageData}`,
     });
-
   } catch (error) {
     // * Error handling: log the error and send 500 response to client
     console.error("Error analyzing image:", error);
