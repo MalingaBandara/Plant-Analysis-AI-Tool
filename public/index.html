@@ -174,7 +174,7 @@
           <p class="upload-text">Drag & Drop or Click to Upload Plant Image</p>
           <input
             type="file"
-            name="image"
+            name="plant-img"
             accept="image/*"
             required
             id="imageInput"
@@ -223,9 +223,13 @@
       const loadingDiv = document.getElementById("loading");           // * Div shown during loading/analysis
       const downloadButton = document.getElementById("downloadButton");// * Button to download results (PDF, etc.)
       const dropArea = document.getElementById("dropArea");            // * Drag-and-drop area
+
+      // * Variables to store results after image processing
       let analysisResult = "";                                         // * Stores analysis text result
       let analysisImage = "";                                          // * Stores base64 of uploaded image
 
+
+// ---------------- Drag & Drop + Click Events ----------------
 
       // ✅ Handle click on drop area → opens hidden file input
       dropArea.addEventListener('click', () => imageInput.click());
@@ -256,43 +260,89 @@
       });
 
 
-      // ❌ Wrong before → `dropArea.addEventListener('change', ...)`
-      // ✅ Correct → listen for changes on the <input type="file">
-      imageInput.addEventListener('change', () => {
-        const file = imageInput.files[0]; // Get selected file
-
-        if (file && file.type.startsWith('image/')) {
-          handelImageUpload(file); // Call same function as drop
-        }
+// ---------------- File Input Change Event ----------------
+     
+      // * If user selects a file manually using the file input
+      dropArea.addEventListener('change', () => {
+          const file = imageInput.files[0]; // Get selected file
+          
+          // * Check if selected file exists and is an image
+          if (file && file.type.startsWith('image/')) {
+              handelImageUpload(file); // Call function to handle upload
+          }
       });
 
 
+
+// ---------------- Image Upload & Preview ----------------
+      // * Function to handle image upload (preview before sending to server)
       function handelImageUpload(file) {
 
-        const reader = new FileReader();
+        const reader = new FileReader(); // Create a new FileReader object (reads files as data URLs or text)
 
-        reader.onload = function (e){
-          imagePreview.src = e.target.result; // Preview uploaded image
-          imagePreview.style.display = 'block';
+        // * When file reading is finished (onload event)
+        reader.onload = function (e) {
+          imagePreview.src = e.target.result; // Set the <img> preview source to the uploaded file
+          imagePreview.style.display = 'block'; // Make sure preview is visible
         };
 
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(file); // Read the file as a Base64 data URL (needed for preview in browser)
 
-     };
-
-
-     uploadForm.addEventListener('submit', async (e) => {
-
-        e.preventDefault(); // Prevent default form submission
-        loadingDiv.style.display = 'block'; // Show loading indicator
-        
-
-
-     });
+      };
 
 
 
+// ---------------- Form Submit & Backend Request ----------------
+      // * Handle form submission (sending image to backend for analysis)
+      uploadForm.addEventListener('submit', async (e) => {
 
+        e.preventDefault(); // Stop the form from refreshing the page
+        const formData = new FormData(e.target); // Collect all form fields into FormData (includes file)
+
+        // UI adjustments while waiting for response
+        loadingDiv.style.display = 'block';   // Show loading spinner/text
+        resultDiv.style.display = 'none';     // Hide result box
+        resultDiv.textContent = '';           // Clear any previous result text
+        downloadButton.style.display = 'none';// Hide download button initially
+
+        try {
+          // * Send POST request to backend endpoint (/analyze)
+          const response = await fetch('/analyze', {
+            method: 'POST',
+            body: formData // Send form data with image
+          });
+
+          const data = await response.json(); // Parse JSON response
+
+          // * If backend returned a result
+          if (data.result) {
+            analysisResult = data.result; // Save result text
+            analysisImage = data.image;   // Save processed image path/URL
+
+            // Display result inside resultDiv (convert new lines into <br> for HTML)
+            resultDiv.innerHTML =
+              "<h3>Analysis Result:</h3><p>" +
+              analysisResult.replace(/\n/g, "<br>") +
+              "</p>";
+
+            resultDiv.style.display = 'block';  // Show result text
+            loadingDiv.style.display = 'none';  // Hide loading
+            downloadButton.style.display = 'block'; // Show download button
+
+          } else {
+            // * If backend responded with error
+            resultDiv.textContent = "Error: " + data.error;
+            resultDiv.style.display = 'block';
+          }
+
+        } catch (error) {
+          // * Handle network or server errors
+          resultDiv.textContent = "Error: " + error.message;
+          resultDiv.style.display = 'block';
+        }
+
+      });
+      
 
     </script>
   </body>
