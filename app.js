@@ -8,6 +8,8 @@ const fsPromises = fs.promises; // * Use the Promise-based version of fs (fs.pro
 // * Import GoogleGenAI from the @google/genai package
 //   - This is used to interact with Google's Generative AI models
 const { GoogleGenAI } = require("@google/genai");
+const { resolve } = require('path');
+const { rejects } = require('assert');
 
 const app = express(); // * Initialize an Express application
 const PORT = process.env.PORT || 3000;
@@ -86,13 +88,73 @@ app.post('/analyze', upload.single('plant-img'), async (req, res) => {
 
 
 
-// * Download PDF Route
-//   - Handles POST requests to '/download'
-//   - Currently responds with { success: true }
-//   - You can expand this to generate a PDF with pdfkit and send it to the client
-app.post('/download', async (req, res) => {
-    res.json({ success: true }); // * Send success response back to client
+// ---------------- Download PDF Route ----------------
+app.post('/download', express.json(), async (req, res) => {
+
+  // Extract result text & image (base64) from request body
+  const { result, image } = req.body;
+
+  try {
+    // ---------------- Setup PDF Output ----------------
+    const reportsDir = path.join(__dirname, 'reports'); // Directory to save reports
+    await fsPromises.mkdir(reportsDir, { recursive: true }); // Create directory if not exists
+
+    const filename = `plant_analysis_report_${Date.now()}.pdf`; // Unique filename
+    const filepath = path.join(reportsDir, filename); // Full file path
+
+    // Create writable stream for PDF output
+    const writeStream = fs.createWriteStream(filepath);
+
+    // ---------------- Create PDF Document ----------------
+    const pdfDoc = new pdfkit();
+    pdfDoc.pipe(writeStream); // Pipe document content to file
+
+    // Add title
+    pdfDoc.fontSize(24).text('Plant Analysis Report', { underline: true, align: 'center' });
+    pdfDoc.moveDown();
+
+    // Add date
+    pdfDoc.fontSize(24).text(`Date: ${new Date().toLocaleDateString()}`);
+    pdfDoc.moveDown();
+
+    // Add analysis result
+    pdfDoc.fontSize(14).text(result, { align: 'left' });
+
+    // ---------------- Add Image if Provided ----------------
+    if (image) {
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, ''); // Remove base64 header
+      const buffer = Buffer.from(base64Data, 'base64'); // Convert base64 → buffer
+
+      pdfDoc.moveDown();
+      pdfDoc.image(buffer, { fit: [500, 300], align: 'center', valign: 'center' }); // Add image
+    }
+
+    // Finalize PDF
+    pdfDoc.end();
+
+    // ---------------- Wait for PDF Creation ----------------
+    await new Promise((resolve, reject) => {
+      writeStream.on('finish', resolve);
+      writeStream.on('error', reject);
+    });
+
+    // ---------------- Send File to Client ----------------
+    res.download(filepath, (err) => {
+      if (err) {
+        res.status(500).json({ error: 'Error downloading PDF Report' });
+      }
+    });
+
+    // Delete file after sending to client
+    fsPromises.unlink(filepath);
+
+  } catch (error) {
+    console.error("Error downloading PDF:", error);
+    res.status(500).json({ error: "An error occurred while downloading the PDF" });
+  }
+
 });
+
 
 
 //! Start the server

@@ -339,6 +339,10 @@
           // * Handle network or server errors
           resultDiv.textContent = "Error: " + error.message;
           resultDiv.style.display = 'block';
+
+        } finally {
+          // *  Hide loading spinner
+          loadingDiv.style.display = 'none';
         }
 
       });
