@@ -56,18 +56,18 @@ The **Plant Analysis AI Tool** leverages AI to provide an intelligent solution f
     ```
 
 ## 📸 Screenshots
-<h4> Main </h4>
-<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/ss/home.png" alt="Home Page" width="500">
+<h4>Main </h4>
+<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/blob/main/ss/home.png" alt="Home Page" width="500">
 
-<h4>📝 Upload image</h4>
-<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/ss/upload.png" alt="Create Post Page" width="500">
+<h4>Upload image</h4>
+<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/blob/main/ss/upload.png" alt="Create Post Page" width="500">
 
 
 <h4>Analyze</h4>
-<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/ss/result.png" alt="Posts Page" width="500">
+<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/blob/main/ss/result.png" alt="Posts Page" width="500">
 
 <h4>PDF</h4>
-<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/ss/pdf.png" alt="Posts Page" width="500">
+<img src="https://github.com/MalingaBandara/Plant-Analysis-AI-Tool/blob/main/ss/pdf.png" alt="Posts Page" width="500">
 
 ## 🧪 Usage
 
