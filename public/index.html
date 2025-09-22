@@ -348,6 +348,45 @@
       });
       
 
+// ---------------- Download PDF Button Click ----------------
+      downloadButton.addEventListener('click', async(e) => {
+
+        // ---------------- Send POST Request to Backend ----------------
+        // Pass the analysis result text and image (base64) to the server
+        const response = await fetch("/download", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            result: analysisResult,  // Analysis text from previous step
+            image: analysisImage     // Base64-encoded plant image
+          }),
+        });
+
+        // ---------------- Handle Server Response ----------------
+        if (response.ok) {
+          // Convert the response into a blob (binary data)
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob); // Create a temporary URL for the blob
+
+          // ---------------- Trigger Download in Browser ----------------
+          const a = document.createElement("a");   // Create a temporary <a> element
+          a.href = url;                             // Set href to blob URL
+          a.download = "plant_analysis_report.pdf"; // Set filename for download
+          document.body.appendChild(a);             // Append to DOM
+          a.click();                                // Trigger click to download
+          document.body.removeChild(a);             // Clean up temporary element
+
+        } else {
+          // ---------------- Handle Errors ----------------
+          alert("Error downloading report. Please try again. " + response.statusText);
+        }
+
+
+      } );
+
+
     </script>
   </body>
 </html>

@@ -5,10 +5,11 @@ const pdfkit = require('pdfkit'); // * Import PDFKit for generating PDF document
 const fs = require('fs'); // * Import Node.js File System (fs) module for working with files
 const fsPromises = fs.promises; // * Use the Promise-based version of fs (fs.promises) for async/await operations
 
+
 // * Import GoogleGenAI from the @google/genai package
 //   - This is used to interact with Google's Generative AI models
 const { GoogleGenAI } = require("@google/genai");
-const { resolve } = require('path');
+const path = require('path');
 const { rejects } = require('assert');
 
 const app = express(); // * Initialize an Express application
@@ -139,14 +140,17 @@ app.post('/download', express.json(), async (req, res) => {
     });
 
     // ---------------- Send File to Client ----------------
-    res.download(filepath, (err) => {
+    res.download(filepath,  (err) => {
       if (err) {
         res.status(500).json({ error: 'Error downloading PDF Report' });
       }
+
+       // Delete file after sending to client
+      fsPromises.unlink(filepath);
+
     });
 
-    // Delete file after sending to client
-    fsPromises.unlink(filepath);
+   
 
   } catch (error) {
     console.error("Error downloading PDF:", error);
